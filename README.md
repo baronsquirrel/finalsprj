@@ -7,12 +7,51 @@
 
 **Author:** _(your name / team members here)_
 
+## Requirements
+
+- g++ with C++17 and `make` (MSYS2 UCRT64 on Windows)
+- PostgreSQL 18 (any recent version works) running locally
+- The libpqxx client library. On MSYS2: `pacman -S --needed mingw-w64-ucrt-x86_64-libpqxx`
+
+## Database setup (one time)
+
+```sql
+-- as the postgres superuser:  psql -U postgres
+CREATE USER ecommerce_app WITH PASSWORD 'choose-a-password';
+CREATE DATABASE ecommerce_db OWNER ecommerce_app;
+```
+
+Then create the tables from the project folder:
+
+```bash
+psql -U ecommerce_app -d ecommerce_db -f sql/schema.sql
+```
+
+The first time the program runs it stores the 16 starting products in the database. After
+that, everything is loaded from PostgreSQL at startup.
+
+## Running (password and connection)
+
+The password is **never** stored in the code or the repository. Set it for your terminal session first:
+
+```powershell
+$env:PGPASSWORD = "your-ecommerce_app-password"      # PowerShell
+export PGPASSWORD="your-ecommerce_app-password"      # bash / MSYS2
+```
+
+By default the program connects to `localhost:5432`, database `ecommerce_db`, user `ecommerce_app`.
+To use different settings, set `ECOMMERCE_DB_CONN`, for example:
+`host=localhost port=5433 dbname=mydb user=me`.
+
+If PostgreSQL cannot be reached (service stopped, wrong password, tables missing), the program prints
+an error and exits with code 1. If the connection is lost while it is running, it exits the same way.
+
 ## Build and run
 
 Open a terminal **inside the project folder**, then:
 
 ```bash
-make                 # compiles into build/, writes the program to the project root
+make                 # compiles into build/, writes the program to the project root (links -lpqxx -lpq)
 ./ecommerce          # Windows PowerShell: .\ecommerce.exe
 ```
 
@@ -23,7 +62,7 @@ No `make`? Compile everything with one command (the `-Iinclude` flag tells g++ w
 ```bash
 g++ -std=c++17 -Wall -Wextra -Iinclude -o ecommerce main.cpp src/Utils.cpp src/Sorting.cpp \
     src/Searching.cpp src/AdminActions.cpp src/SeedData.cpp src/CatalogViews.cpp \
-    src/ShoppingMenus.cpp src/AdminMenu.cpp
+    src/ShoppingMenus.cpp src/AdminMenu.cpp src/Database.cpp src/AppContext.cpp -lpqxx -lpq
 ```
 
 ## Project structure
@@ -36,6 +75,8 @@ ecommerce-system/
 ├── ecommerce(.exe)         the built program (created by make)
 ├── include/                all headers
 │   ├── Product.h           struct Product (the required data model)
+│   ├── Database.h          PostgreSQL layer (libpqxx), the only code that talks to the database
+│   ├── AppContext.h        bundles the database + all data structures; passed to the menus
 │   ├── Utils.h             input checking, toLower, table printing
 │   ├── Inventory.h         Catalog + ProductBST kept in sync
 │   ├── Catalog.h           Lab 1 - dynamic, resizable array
@@ -56,11 +97,15 @@ ecommerce-system/
 │   ├── Utils.cpp
 │   ├── Searching.cpp       Lab 7 - linear keyword search, binary search bounds
 │   ├── Sorting.cpp         Lab 8 - insertion sort, quick sort
-│   ├── AdminActions.cpp    undo / redo logic
+│   ├── AdminActions.cpp    add / stock / remove helpers (database + memory) and undo / redo
+│   ├── Database.cpp        all SQL lives here
+│   ├── AppContext.cpp      loads everything from PostgreSQL at startup
 │   ├── SeedData.cpp        the 16 starting products
 │   ├── CatalogViews.cpp
 │   ├── ShoppingMenus.cpp
 │   └── AdminMenu.cpp
+├── sql/
+│   └── schema.sql          the 5 tables (run once with psql)
 ├── build/                  intermediate .o files (created by make)
 └── .vscode/                editor include-path settings
 ```
@@ -116,6 +161,25 @@ small temporary lists (distinct brand names, line items copied into an order).
 - **Undo / redo:** stock changes are saved as before/after values and applied as a delta, so units already sold at checkout are not restored by an undo.
 - **Checkout:** processing is all-or-nothing. If any line is out of stock or the product was removed, the order is cancelled and no stock changes.
 - **Cart merging:** adding the same product twice increases the quantity of the existing cart node.
+
+## PostgreSQL integration
+
+The Lab 1-8 data structures are unchanged. PostgreSQL sits underneath them: data is loaded into
+the structures at startup, and every change is written to the database as it happens.
+
+| Data | Stored in | Notes |
+|---|---|---|
+| Products | `products` | catalog array + BST are rebuilt from it at startup |
+| Cart | `cart_items` | only product id and qty; name and price come from the catalog |
+| Wishlist | `wishlist_items` | list order kept by a `position` column |
+| Orders | `orders`, `order_items` | `pending` orders are reloaded into the FIFO queue in order |
+| Undo / redo stacks | not stored | session history only |
+
+- **Transactions:** placing an order (save order + lines + empty the cart) is one transaction.
+  Processing an order (deduct stock for every line + mark completed) is one transaction, so it is all or nothing.
+- **Database first:** every change is written to PostgreSQL before memory is updated, so a database failure never leaves memory ahead of the database.
+- **Deleting a product** also removes it from the cart and wishlist (a database `ON DELETE CASCADE`, mirrored in memory).
+- **Order history keeps a snapshot** of each line's name and price, so it stays correct if the product later changes.
 
 ## Memory management and safety
 

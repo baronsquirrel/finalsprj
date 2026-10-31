@@ -61,6 +61,21 @@ public:
         return true;
     }
 
+    // Removes the line for a product (used when an admin deletes that product).
+    // The cursor stays where it is unless it was sitting on the removed line.
+    bool removeProduct(int productId) {
+        for (Node* n = head; n; n = n->next) {
+            if (n->item.productId != productId) continue;
+            if (n == cur) return removeCurrent();
+            if (n->prev) n->prev->next = n->next; else head = n->next;
+            if (n->next) n->next->prev = n->prev; else tail = n->prev;
+            delete n;
+            count--;
+            return true;
+        }
+        return false;
+    }
+
     const CartItem* current() const { return cur ? &cur->item : nullptr; }
 
     double total() const {

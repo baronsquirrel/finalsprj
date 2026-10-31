@@ -1,10 +1,7 @@
 #pragma once
 // Customer-facing features: cart + wishlist, and the checkout queue.
-#include "Inventory.h"
-#include "Cart.h"
-#include "Wishlist.h"
-#include "OrderQueue.h"
+#include "AppContext.h"
 
-void cartMenu(Inventory& inv, Cart& cart, Wishlist& wish);                              // menu 5
-void processNextOrder(Inventory& inv, OrderQueue& queue);
-void checkoutMenu(Inventory& inv, Cart& cart, OrderQueue& queue, int& nextOrderId);      // menu 6
+void cartMenu(AppContext& ctx);          // menu 5
+void processNextOrder(AppContext& ctx);
+void checkoutMenu(AppContext& ctx);      // menu 6

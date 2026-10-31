@@ -12,18 +12,16 @@
 //    Lab 6  BST                  -> ProductBST.h
 //    Lab 7  Searching            -> Searching.cpp
 //    Lab 8  Sorting              -> Sorting.cpp
+//    Storage                     -> Database.h/.cpp (PostgreSQL), AppContext.h/.cpp
 //
 //  Build:  run `make` in the project folder (see README.md for the g++ command)
 // ============================================================================
 
+#include <cstdlib>
 #include <iostream>
-#include "Inventory.h"
-#include "Cart.h"
-#include "Wishlist.h"
-#include "OrderQueue.h"
-#include "ActionStack.h"
+#include <string>
+#include "AppContext.h"
 #include "Utils.h"
-#include "SeedData.h"
 #include "CatalogViews.h"
 #include "ShoppingMenus.h"
 #include "AdminMenu.h"
@@ -46,29 +44,33 @@ void printMenu() {
     printLine('=');
 }
 
-void run() {
-    Inventory inventory;
-    Cart cart;
-    Wishlist wishlist;
-    OrderQueue orders;
-    ActionStack undoStack, redoStack;
-    int nextOrderId = 5001;
+// Connection settings. The password is never stored in the code or the repository:
+// libpq reads it from the PGPASSWORD environment variable (or pgpass.conf).
+// Set ECOMMERCE_DB_CONN to point the program at a different database.
+string connectionString() {
+    const char* env = getenv("ECOMMERCE_DB_CONN");
+    if (env && *env) return env;
+    return "host=localhost port=5432 dbname=ecommerce_db user=ecommerce_app";
+}
 
-    loadSeedData(inventory);
+void run() {
+    cout << "Connecting to PostgreSQL...\n";
+    AppContext ctx(connectionString());      // throws DbConnectError if the database is down
+    ctx.loadFromDatabase();
 
     while (true) {
         printMenu();
         int choice = readInt("Enter choice (1-10): ", 1, 10);
         switch (choice) {
-            case 1:  showCatalog(inventory); break;
-            case 2:  filterByBrand(inventory); break;
-            case 3:  searchMenu(inventory); break;
-            case 4:  priceRangeFilter(inventory); break;
-            case 5:  cartMenu(inventory, cart, wishlist); break;
-            case 6:  checkoutMenu(inventory, cart, orders, nextOrderId); break;
-            case 7:  adminMenu(inventory, undoStack, redoStack); break;
-            case 8:  brandShowcase(inventory); break;
-            case 9:  sortMenu(inventory); break;
+            case 1:  showCatalog(ctx.inventory); break;
+            case 2:  filterByBrand(ctx.inventory); break;
+            case 3:  searchMenu(ctx.inventory); break;
+            case 4:  priceRangeFilter(ctx.inventory); break;
+            case 5:  cartMenu(ctx); break;
+            case 6:  checkoutMenu(ctx); break;
+            case 7:  adminMenu(ctx); break;
+            case 8:  brandShowcase(ctx.inventory); break;
+            case 9:  sortMenu(ctx.inventory); break;
             case 10:
                 cout << "\nThank you for using the system. Freeing all memory... Goodbye!\n";
                 return;     // every container's destructor releases its nodes
@@ -81,6 +83,15 @@ int main() {
         run();
     } catch (const InputEnded&) {
         cout << "\nInput closed. Exiting...\n";
+    } catch (const DbConnectError& e) {
+        cerr << "\nERROR: could not connect to PostgreSQL.\n" << e.what()
+             << "\nCheck that the PostgreSQL service is running and that PGPASSWORD is set."
+             << "\nThe system cannot run without its database. Exiting.\n";
+        return 1;
+    } catch (const exception& e) {
+        cerr << "\nDATABASE ERROR: " << e.what()
+             << "\nThe program cannot continue and will now exit.\n";
+        return 1;
     }
     return 0;
 }
