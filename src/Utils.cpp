@@ -2,6 +2,7 @@
 #include <iomanip>
 #include <sstream>
 #include <cctype>
+#include <cstdlib>
 #include "Utils.h"
 
 string readLine(const string& prompt) {
@@ -39,6 +40,16 @@ string readNonEmpty(const string& prompt) {
         if (a != string::npos) return s.substr(a, b - a + 1);
         cout << "  This field cannot be empty.\n";
     }
+}
+
+void clearScreen() {
+    cout.flush();                          // get earlier text out before the screen is wiped
+#ifdef _WIN32
+    int rc = system("cls");
+    (void)rc;
+#else
+    cout << "\033[2J\033[H" << flush;      // ANSI clear + cursor home for non-Windows terminals
+#endif
 }
 
 void pauseForEnter(const string& message) {

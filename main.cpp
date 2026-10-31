@@ -27,7 +27,7 @@
 #include "AdminMenu.h"
 
 void printMenu() {
-    cout << "\n";
+    clearScreen();
     printLine('=');
     cout << " BRAND-AFFILIATED E-COMMERCE INVENTORY & SEARCH SYSTEM (CS201)\n";
     printLine('=');
@@ -57,6 +57,7 @@ void run() {
     cout << "Connecting to PostgreSQL...\n";
     AppContext ctx(connectionString());      // throws DbConnectError if the database is down
     ctx.loadFromDatabase();
+    pauseForEnter("Press Enter to open the main menu...");
 
     while (true) {
         printMenu();
@@ -72,7 +73,8 @@ void run() {
             case 8:  brandShowcase(ctx.inventory); break;
             case 9:  sortMenu(ctx.inventory); break;
             case 10:
-                cout << "\nThank you for using the system. Freeing all memory... Goodbye!\n";
+                clearScreen();
+                cout << "Thank you for using the system. Freeing all memory... Goodbye!\n";
                 return;     // every container's destructor releases its nodes
         }
     }

@@ -9,7 +9,8 @@
 #include "BrandRing.h"
 
 void showCatalog(const Inventory& inv) {
-    cout << "\n--- COMPLETE CATALOG (" << inv.catalog.size() << " products, array capacity "
+    clearScreen();
+    cout << "--- COMPLETE CATALOG (" << inv.catalog.size() << " products, array capacity "
          << inv.catalog.cap() << ") ---\n";
     printHeader();
     for (int i = 0; i < inv.catalog.size(); i++) printRow(*inv.catalog.at(i));
@@ -27,14 +28,16 @@ void filterByBrand(const Inventory& inv) {
             if (toLower(brands[k]) == toLower(b)) { seen = true; break; }
         if (!seen) brands.push_back(b);
     }
-    if (brands.empty()) { cout << "  The catalog is empty.\n"; return; }
+    if (brands.empty()) { cout << "  The catalog is empty.\n"; pauseForEnter(); return; }
 
-    cout << "\n--- OFFICIAL PARTNER BRANDS ---\n";
+    clearScreen();
+    cout << "--- OFFICIAL PARTNER BRANDS ---\n";
     for (size_t i = 0; i < brands.size(); i++) cout << "  " << i + 1 << ". " << brands[i] << "\n";
     int choice = readInt("Select brand number: ", 1, (int)brands.size());
     const string& chosen = brands[choice - 1];
 
-    cout << "\n--- " << chosen << " PRODUCTS ---\n";
+    clearScreen();
+    cout << "--- " << chosen << " PRODUCTS ---\n";
     printHeader();
     int n = 0;
     for (int i = 0; i < inv.catalog.size(); i++) {
@@ -46,10 +49,13 @@ void filterByBrand(const Inventory& inv) {
 }
 
 void searchMenu(const Inventory& inv) {
-    cout << "\n--- SEARCH ---\n  1. Keyword (Linear Search)\n  2. Product ID (BST Search)\n  0. Back\n";
+    clearScreen();
+    cout << "--- SEARCH ---\n  1. Keyword (Linear Search)\n  2. Product ID (BST Search)\n  0. Back\n";
     int c = readInt("Choice: ", 0, 2);
     if (c == 1) {
         string key = readNonEmpty("Keyword (name / brand / category): ");
+        clearScreen();
+        cout << "--- KEYWORD SEARCH: '" << key << "' ---\n";
         Product** res = new Product*[inv.catalog.size() > 0 ? inv.catalog.size() : 1];
         int found = linearKeywordSearch(inv.catalog, key, res);
         if (found == 0) cout << "  No products match '" << key << "'.\n";
@@ -64,6 +70,8 @@ void searchMenu(const Inventory& inv) {
         pauseForEnter();
     } else if (c == 2) {
         int id = readInt("Product ID: ", 1, 2000000000);
+        clearScreen();
+        cout << "--- PRODUCT ID SEARCH: " << id << " ---\n";
         int steps = 0;
         Product* p = inv.find(id, &steps);
         if (!p) cout << "  No product with ID " << id << ".\n";
@@ -76,10 +84,13 @@ void searchMenu(const Inventory& inv) {
 
 void priceRangeFilter(const Inventory& inv) {
     int n = inv.catalog.size();
-    if (n == 0) { cout << "  The catalog is empty.\n"; return; }
+    if (n == 0) { cout << "  The catalog is empty.\n"; pauseForEnter(); return; }
+    clearScreen();
+    cout << "--- PRICE RANGE FILTER ---\n";
     double lo = readDouble("Minimum price (PHP): ", 0, 1e9);
     double hi = readDouble("Maximum price (PHP): ", 0, 1e9);
-    if (lo > hi) { double t = lo; lo = hi; hi = t; cout << "  (min/max swapped)\n"; }
+    bool swapped = false;
+    if (lo > hi) { double t = lo; lo = hi; hi = t; swapped = true; }
 
     // Binary search needs sorted data: sort a copy by price with Quick Sort first.
     Product** sorted = copyPointers(inv.catalog);
@@ -87,6 +98,9 @@ void priceRangeFilter(const Inventory& inv) {
     int first = lowerBound(sorted, n, lo);
     int last = upperBound(sorted, n, hi);     // exclusive
 
+    clearScreen();
+    cout << "--- PRODUCTS FROM PHP " << fixed << setprecision(2) << lo << " TO PHP " << hi << " ---\n";
+    if (swapped) cout << "  (minimum and maximum were swapped)\n";
     if (first >= last) cout << "  No products between PHP " << fixed << setprecision(2) << lo
                             << " and PHP " << hi << ".\n";
     else {
@@ -103,10 +117,11 @@ void brandShowcase(const Inventory& inv) {
     BrandRing ring;
     for (int i = 0; i < inv.catalog.size(); i++)
         ring.add(inv.catalog.at(i)->brand, taglineFor(inv.catalog.at(i)->brand));
-    if (ring.size() == 0) { cout << "  No brands to showcase.\n"; return; }
+    if (ring.size() == 0) { cout << "  No brands to showcase.\n"; pauseForEnter(); return; }
 
-    cout << "\n--- PARTNER BRAND SHOWCASE (circular list, " << ring.size() << " brands) ---\n";
     while (true) {
+        clearScreen();
+        cout << "--- PARTNER BRAND SHOWCASE (circular list, " << ring.size() << " brands) ---\n";
         int count = 0;
         for (int i = 0; i < inv.catalog.size(); i++)
             if (toLower(inv.catalog.at(i)->brand) == toLower(ring.brand())) count++;
@@ -123,23 +138,25 @@ void brandShowcase(const Inventory& inv) {
 
 void sortMenu(const Inventory& inv) {
     int n = inv.catalog.size();
-    if (n == 0) { cout << "  The catalog is empty.\n"; return; }
-    cout << "\n--- SORT INVENTORY ---\n  1. By price (Quick Sort)\n  2. By stock (Insertion Sort)\n"
+    if (n == 0) { cout << "  The catalog is empty.\n"; pauseForEnter(); return; }
+    clearScreen();
+    cout << "--- SORT INVENTORY ---\n  1. By price (Quick Sort)\n  2. By stock (Insertion Sort)\n"
          << "  3. By brand (Insertion Sort, ties by name)\n  0. Back\n";
     int c = readInt("Choice: ", 0, 3);
     if (c == 0) return;
     int dir = readInt("  1 = ascending, 2 = descending: ", 1, 2);
 
     Product** arr = copyPointers(inv.catalog);   // sort a copy; catalog order is untouched
+    clearScreen();
     if (c == 1) {
         quickSort(arr, 0, n - 1, dir == 1 ? priceAsc : priceDesc);
-        cout << "\nSorted by price (" << (dir == 1 ? "low to high" : "high to low") << ") using Quick Sort:\n";
+        cout << "Sorted by price (" << (dir == 1 ? "low to high" : "high to low") << ") using Quick Sort:\n";
     } else if (c == 2) {
         insertionSort(arr, n, dir == 1 ? stockAsc : stockDesc);
-        cout << "\nSorted by stock (" << (dir == 1 ? "low to high" : "high to low") << ") using Insertion Sort:\n";
+        cout << "Sorted by stock (" << (dir == 1 ? "low to high" : "high to low") << ") using Insertion Sort:\n";
     } else {
         insertionSort(arr, n, dir == 1 ? brandAsc : brandDesc);
-        cout << "\nSorted by brand (" << (dir == 1 ? "A to Z" : "Z to A") << ") using Insertion Sort:\n";
+        cout << "Sorted by brand (" << (dir == 1 ? "A to Z" : "Z to A") << ") using Insertion Sort:\n";
     }
     printHeader();
     for (int i = 0; i < n; i++) printRow(*arr[i]);
