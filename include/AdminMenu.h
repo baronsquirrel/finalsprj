@@ -1,6 +1,5 @@
 #pragma once
 // Admin panel: add / update stock / remove, plus undo & redo (stacks).
-#include "Inventory.h"
-#include "ActionStack.h"
+#include "AppContext.h"
 
-void adminMenu(Inventory& inv, ActionStack& undoStack, ActionStack& redoStack);   // menu 7
+void adminMenu(AppContext& ctx);   // menu 7

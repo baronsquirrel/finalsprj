@@ -1,5 +1,8 @@
 CXX      = g++
-CXXFLAGS = -std=c++17 -Wall -Wextra -Iinclude
+CXXFLAGS = -std=c++17 -Wall -Wextra -Iinclude $(EXTRA_FLAGS)
+
+# PostgreSQL client libraries (libpqxx = C++ wrapper, libpq = the C driver under it)
+LIBS = -lpqxx -lpq
 
 # Folder layout:
 #   include/  all .h files
@@ -24,7 +27,7 @@ all: $(TARGET)
 
 # Link step: build/*.o  ->  ecommerce
 $(TARGET): $(OBJS)
-	$(CXX) $(CXXFLAGS) -o $@ $(OBJS)
+	$(CXX) $(CXXFLAGS) -o $@ $(OBJS) $(LDFLAGS) $(LIBS)
 
 # Compile steps. -MMD also writes build/X.d, a list of the headers X.cpp uses,
 # so editing a .h file correctly triggers a rebuild.
@@ -39,7 +42,7 @@ $(BUILD_DIR):
 
 # Memory-safety check (AddressSanitizer + UBSan) -> ecommerce_asan
 asan:
-	$(CXX) $(CXXFLAGS) -g -fsanitize=address,undefined -o ecommerce_asan$(EXE) main.cpp $(SRC_FILES)
+	$(CXX) $(CXXFLAGS) -g -fsanitize=address,undefined -o ecommerce_asan$(EXE) main.cpp $(SRC_FILES) $(LDFLAGS) $(LIBS)
 
 clean:
 	rm -rf $(BUILD_DIR) $(TARGET) ecommerce_asan$(EXE)
