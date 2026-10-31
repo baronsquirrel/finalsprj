@@ -14,6 +14,7 @@ void showCatalog(const Inventory& inv) {
     printHeader();
     for (int i = 0; i < inv.catalog.size(); i++) printRow(*inv.catalog.at(i));
     printLine();
+    pauseForEnter();
 }
 
 void filterByBrand(const Inventory& inv) {
@@ -41,6 +42,7 @@ void filterByBrand(const Inventory& inv) {
     }
     printLine();
     cout << n << " product(s) from " << chosen << ".\n";
+    pauseForEnter();
 }
 
 void searchMenu(const Inventory& inv) {
@@ -59,6 +61,7 @@ void searchMenu(const Inventory& inv) {
         cout << "Linear search scanned " << inv.catalog.size() << " records (O(n)), "
              << found << " match(es).\n";
         delete[] res;
+        pauseForEnter();
     } else if (c == 2) {
         int id = readInt("Product ID: ", 1, 2000000000);
         int steps = 0;
@@ -67,6 +70,7 @@ void searchMenu(const Inventory& inv) {
         else { printHeader(); printRow(*p); printLine(); }
         cout << "BST visited " << steps << " node(s); tree height " << inv.bst.height()
              << " for " << inv.catalog.size() << " products (O(log n)).\n";
+        pauseForEnter();
     }
 }
 
@@ -92,6 +96,7 @@ void priceRangeFilter(const Inventory& inv) {
         cout << (last - first) << " product(s) in range (found with two binary searches, O(log n)).\n";
     }
     delete[] sorted;
+    pauseForEnter();
 }
 
 void brandShowcase(const Inventory& inv) {
@@ -140,4 +145,5 @@ void sortMenu(const Inventory& inv) {
     for (int i = 0; i < n; i++) printRow(*arr[i]);
     printLine();
     delete[] arr;
+    pauseForEnter();
 }

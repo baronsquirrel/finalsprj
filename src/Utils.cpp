@@ -41,6 +41,11 @@ string readNonEmpty(const string& prompt) {
     }
 }
 
+void pauseForEnter(const string& message) {
+    cout << "\n";
+    readLine(message);
+}
+
 string toLower(string s) {
     for (size_t i = 0; i < s.size(); i++) s[i] = (char)tolower((unsigned char)s[i]);
     return s;

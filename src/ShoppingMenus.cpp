@@ -28,6 +28,7 @@ void cartMenu(AppContext& ctx) {
             cout << "  Added " << qty << " x " << p->name << " to your cart.\n";
         } else if (c == 2) {
             cart.display();
+            pauseForEnter();
         } else if (c == 3) {
             if (cart.size() == 0) { cout << "  (cart is empty)\n"; continue; }
             while (true) {
@@ -55,6 +56,7 @@ void cartMenu(AppContext& ctx) {
             cout << (added ? "  Added to wishlist.\n" : "  Already on your wishlist.\n");
         } else if (c == 6) {
             wish.display();
+            pauseForEnter();
         } else if (c == 7) {
             int id = readInt("Product ID to remove: ", 1, 2000000000);
             bool removed = wish.remove(id);
@@ -131,6 +133,7 @@ void checkoutMenu(AppContext& ctx) {
             processNextOrder(ctx);
         } else if (c == 3) {
             queue.display();
+            pauseForEnter();
         }
     }
 }
