@@ -2,10 +2,7 @@
 
 **Course:** Data Structure and Algorithm Analysis (BS Computer Engineering) - Final Output
 **Language:** C++17, console application
-**Domain / niche:** whatever dataset is loaded (the included sample is Tech & Electronics: Apple, Samsung, Sony, Lenovo)
 **Data:** products, brands and taglines live only in PostgreSQL, never in the C++ code
-
-**Author:** _(your name / team members here)_
 
 ## Requirements
 
