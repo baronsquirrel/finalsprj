@@ -207,6 +207,15 @@ Every prompt that asks for a value (a product ID, a price, a quantity, a search 
 product, ...) says `(Enter to cancel)`. Pressing Enter on an empty line cancels it and returns to the previous
 menu without changing anything. Menus themselves use `0` to go back, and the main menu uses `10` to exit.
 
+## Cart and wishlist
+
+Menu 5 shows the catalog (16 products per page) when you add an item, so you never need to remember an ID:
+type a product ID to select it, `n` / `p` for the next / previous page, `g2` (or `page 2`) to jump to page 2,
+or Enter to cancel. Here a bare number always means a product ID, never a page.
+`Browse cart` and `Browse wishlist` highlight one item (`>>`); use `n` / `p` to move and `r` to remove the
+highlighted one. The cart is a doubly linked list, so moving back is instant; the wishlist is singly linked,
+so moving back walks the list from the start again.
+
 ## Memory management and safety
 
 - Every `new` has a matching `delete` / `delete[]`, released in destructors (`~Catalog`, `~ProductBST`, `~Cart`, `~Wishlist`, `~BrandRing`, `~ActionStack`, `~OrderQueue`).
