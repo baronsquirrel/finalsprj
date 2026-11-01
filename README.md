@@ -212,16 +212,6 @@ make asan
 ./ecommerce_asan
 ```
 
-## Suggested demo script
-
-1. **1** - view the catalog, then **2** - filter by Sony.
-2. **3 > 1** keyword `buds`; **3 > 2** ID `1005` (watch the BST step count).
-3. **4** - range 15000 to 30000 (binary search).
-4. **5 > 1** add items, **5 > 3** browse with n / p, then **6 > 1** place the order and **6 > 2** process it (stock drops).
-5. **7 > 2** change a stock value, **7 > 4** undo it, **7 > 5** redo it.
-6. **8** - cycle brand banners until it wraps. **9** - sort by price, stock and brand.
-7. **10** - exit.
-
 ## Sample data
 
-The sample names and prices in `sql/seed.sql` are illustrative placeholders (PHP), not live store prices.
+The sample names and prices in `sql/pc_component_inventory.sql` are illustrative placeholders (PHP), not live store prices.
