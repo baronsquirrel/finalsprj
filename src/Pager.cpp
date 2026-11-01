@@ -4,13 +4,6 @@
 #include "Pager.h"
 #include "Utils.h"
 
-static string trimmed(const string& s) {
-    size_t a = s.find_first_not_of(" \t");
-    if (a == string::npos) return "";
-    size_t b = s.find_last_not_of(" \t");
-    return s.substr(a, b - a + 1);
-}
-
 void showProductPages(Product** items, int count, const string& heading,
                       const string& footer, const string& emptyMessage) {
     int pages = (count + PRODUCTS_PER_PAGE - 1) / PRODUCTS_PER_PAGE;
@@ -41,7 +34,7 @@ void showProductPages(Product** items, int count, const string& heading,
 
         if (pages == 1) { pauseForEnter(); return; }      // nothing to navigate
 
-        string in = toLower(trimmed(readLine(
+        string in = toLower(trim(readLine(
             "\n[n] next   [p] previous   [1-" + to_string(pages) + "] go to page   [Enter] continue: ")));
         if (in.empty()) return;                           // done, back to the menu
 
@@ -84,7 +77,7 @@ int pickFromList(const vector<string>& options, const string& heading) {
         string prompt = "\nSelect 1-" + to_string(count) + ",";
         if (pages > 1) prompt += " [n] next page, [p] previous page,";
         prompt += " or [0] back: ";
-        string in = toLower(trimmed(readLine(prompt)));
+        string in = toLower(trim(readLine(prompt)));
 
         if (in == "0" || in == "b" || in == "back") return -1;
         if (in == "n" || in == "next") {

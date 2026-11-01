@@ -15,11 +15,12 @@ bool adminMenu(AppContext& ctx) {
 
         if (c == 1) {
             Product prod{ctx.inventory.nextId, "", "", "", 0, 0};
-            prod.name = readNonEmpty("Product name: ");
-            prod.category = readNonEmpty("Category: ");
-            prod.brand = readNonEmpty("Official partner brand: ");
-            prod.price = readDouble("Price (PHP): ", 0.01, 1e9);
-            prod.stockQuantity = readInt("Stock quantity: ", 0, 1000000);
+            if (!readTextOrCancel("Product name", prod.name) ||
+                !readTextOrCancel("Category", prod.category) ||
+                !readTextOrCancel("Official partner brand", prod.brand) ||
+                !readDoubleOrCancel("Price (PHP)", 0.01, 1e9, prod.price) ||
+                !readIntOrCancel("Stock quantity", 0, 1000000, prod.stockQuantity))
+                continue;                         // cancelled: nothing was added
             if (!addProductEverywhere(ctx, prod)) { cout << "  ID collision, product not added.\n"; pauseForEnter(); continue; }
             AdminAction a;
             a.type = ACT_ADD;
@@ -28,11 +29,13 @@ bool adminMenu(AppContext& ctx) {
             ctx.redoStack.clear();
             cout << "  Added '" << prod.name << "' with ID " << prod.id << ".\n";
         } else if (c == 2) {
-            int id = readInt("Product ID: ", 1, 2000000000);
+            int id = 0;
+            if (!readIntOrCancel("Product ID", 1, 2000000000, id)) continue;
             Product* p = ctx.inventory.find(id);
             if (!p) { cout << "  No product with ID " << id << ".\n"; pauseForEnter(); continue; }
             cout << "  '" << p->name << "' currently has " << p->stockQuantity << " in stock.\n";
-            int q = readInt("New stock quantity: ", 0, 1000000);
+            int q = 0;
+            if (!readIntOrCancel("New stock quantity", 0, 1000000, q)) continue;
             AdminAction a;
             a.type = ACT_STOCK;
             a.before = *p;
@@ -42,7 +45,8 @@ bool adminMenu(AppContext& ctx) {
             ctx.redoStack.clear();
             cout << "  Stock for '" << p->name << "' set to " << q << ".\n";
         } else if (c == 3) {
-            int id = readInt("Product ID: ", 1, 2000000000);
+            int id = 0;
+            if (!readIntOrCancel("Product ID", 1, 2000000000, id)) continue;
             Product* p = ctx.inventory.find(id);
             if (!p) { cout << "  No product with ID " << id << ".\n"; pauseForEnter(); continue; }
             string confirm = toLower(readLine("Remove '" + p->name + "'? (y/n): "));

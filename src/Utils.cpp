@@ -66,6 +66,46 @@ void pauseForEnter(const string& message) {
     readLine(message);
 }
 
+string trim(const string& s) {
+    size_t a = s.find_first_not_of(" \t");
+    if (a == string::npos) return "";
+    size_t b = s.find_last_not_of(" \t");
+    return s.substr(a, b - a + 1);
+}
+
+bool readIntOrCancel(const string& label, int lo, int hi, int& out) {
+    while (true) {
+        string line = trim(readLine(label + " (Enter to cancel): "));
+        if (line.empty()) return false;
+        istringstream ss(line);
+        int v;
+        char extra;
+        if ((ss >> v) && !(ss >> extra) && v >= lo && v <= hi) { out = v; return true; }
+        cout << "  Invalid input. Enter a whole number from " << lo << " to " << hi
+             << ", or press Enter to cancel.\n";
+    }
+}
+
+bool readDoubleOrCancel(const string& label, double lo, double hi, double& out) {
+    while (true) {
+        string line = trim(readLine(label + " (Enter to cancel): "));
+        if (line.empty()) return false;
+        istringstream ss(line);
+        double v;
+        char extra;
+        if ((ss >> v) && !(ss >> extra) && v >= lo && v <= hi) { out = v; return true; }
+        cout << "  Invalid input. Enter a number from " << lo << " to " << hi
+             << ", or press Enter to cancel.\n";
+    }
+}
+
+bool readTextOrCancel(const string& label, string& out) {
+    string line = trim(readLine(label + " (Enter to cancel): "));
+    if (line.empty()) return false;
+    out = line;
+    return true;
+}
+
 string toLower(string s) {
     for (size_t i = 0; i < s.size(); i++) s[i] = (char)tolower((unsigned char)s[i]);
     return s;

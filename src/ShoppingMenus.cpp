@@ -19,11 +19,13 @@ void cartMenu(AppContext& ctx) {
         if (c == 0) return;
 
         if (c == 1) {
-            int id = readInt("Product ID: ", 1, 2000000000);
+            int id = 0;
+            if (!readIntOrCancel("Product ID", 1, 2000000000, id)) continue;
             Product* p = inv.find(id);
             if (!p) { cout << "  No product with ID " << id << ".\n"; pauseForEnter(); continue; }
             if (p->stockQuantity == 0) { cout << "  Sorry, '" << p->name << "' is out of stock.\n"; pauseForEnter(); continue; }
-            int qty = readInt("Quantity (1-" + to_string(p->stockQuantity) + "): ", 1, p->stockQuantity);
+            int qty = 0;
+            if (!readIntOrCancel("Quantity (1-" + to_string(p->stockQuantity) + ")", 1, p->stockQuantity, qty)) continue;
             cart.addItem(*p, qty);
             ctx.db.setCartItem(p->id, cart.current()->qty);   // qty after merging duplicates
             cout << "  Added " << qty << " x " << p->name << " to your cart.\n";
@@ -53,7 +55,8 @@ void cartMenu(AppContext& ctx) {
             ctx.db.removeCartItem(pid);
             cout << "  Removed '" << nm << "' from the cart.\n";
         } else if (c == 5) {
-            int id = readInt("Product ID: ", 1, 2000000000);
+            int id = 0;
+            if (!readIntOrCancel("Product ID", 1, 2000000000, id)) continue;
             Product* p = inv.find(id);
             if (!p) { cout << "  No product with ID " << id << ".\n"; pauseForEnter(); continue; }
             bool added = wish.add(p->id, p->name);
@@ -62,7 +65,8 @@ void cartMenu(AppContext& ctx) {
         } else if (c == 6) {
             wish.display();
         } else if (c == 7) {
-            int id = readInt("Product ID to remove: ", 1, 2000000000);
+            int id = 0;
+            if (!readIntOrCancel("Product ID to remove", 1, 2000000000, id)) continue;
             bool removed = wish.remove(id);
             if (removed) ctx.db.removeWishlistItem(id);
             cout << (removed ? "  Removed from wishlist.\n" : "  Not on your wishlist.\n");
