@@ -13,6 +13,7 @@
 //    Lab 7  Searching            -> Searching.cpp
 //    Lab 8  Sorting              -> Sorting.cpp
 //    Storage                     -> Database.h/.cpp (PostgreSQL), AppContext.h/.cpp
+//    Paging                      -> Pager.h/.cpp (16 products per screen)
 //
 //  Build:  run `make` in the project folder (see README.md for the g++ command)
 // ============================================================================

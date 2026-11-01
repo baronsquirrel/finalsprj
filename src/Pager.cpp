@@ -1,0 +1,58 @@
+#include <iostream>
+#include <sstream>
+#include "Pager.h"
+#include "Utils.h"
+
+static string trimmed(const string& s) {
+    size_t a = s.find_first_not_of(" \t");
+    if (a == string::npos) return "";
+    size_t b = s.find_last_not_of(" \t");
+    return s.substr(a, b - a + 1);
+}
+
+void showProductPages(Product** items, int count, const string& heading,
+                      const string& footer, const string& emptyMessage) {
+    int pages = (count + PRODUCTS_PER_PAGE - 1) / PRODUCTS_PER_PAGE;
+    if (pages < 1) pages = 1;
+    int page = 1;
+    string note;            // a hint to show on the next redraw (e.g. "already on the last page")
+
+    while (true) {
+        clearScreen();
+        cout << heading << "\n";
+
+        if (count == 0) {
+            cout << emptyMessage << "\n";
+        } else {
+            int first = (page - 1) * PRODUCTS_PER_PAGE;                 // index of the first row
+            int last = first + PRODUCTS_PER_PAGE;                       // one past the last row
+            if (last > count) last = count;
+            printHeader();
+            for (int i = first; i < last; i++) printRow(*items[i]);
+            printLine();
+            if (pages > 1)
+                cout << "Page " << page << " of " << pages << "  (products " << first + 1
+                     << "-" << last << " of " << count << ")\n";
+        }
+        if (!footer.empty()) cout << footer << "\n";
+        if (!note.empty()) { cout << note << "\n"; note.clear(); }
+
+        if (pages == 1) { pauseForEnter(); return; }      // nothing to navigate
+
+        string in = toLower(trimmed(readLine(
+            "\n[n] next   [p] previous   [1-" + to_string(pages) + "] go to page   [Enter] continue: ")));
+        if (in.empty()) return;                           // done, back to the menu
+
+        if (in == "n" || in == "next") {
+            if (page < pages) page++; else note = "  Already on the last page.";
+        } else if (in == "p" || in == "prev" || in == "previous") {
+            if (page > 1) page--; else note = "  Already on the first page.";
+        } else {
+            istringstream ss(in);
+            int target;
+            char extra;
+            if ((ss >> target) && !(ss >> extra) && target >= 1 && target <= pages) page = target;
+            else note = "  Enter n, p, a page number from 1 to " + to_string(pages) + ", or press Enter to continue.";
+        }
+    }
+}

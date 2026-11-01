@@ -1,21 +1,25 @@
 #include <iostream>
 #include <iomanip>
+#include <sstream>
 #include <string>
 #include <vector>
 #include "CatalogViews.h"
 #include "Utils.h"
+#include "Pager.h"
 #include "Sorting.h"
 #include "Searching.h"
 #include "BrandRing.h"
 
+// Every product table below is shown through showProductPages(), which splits long
+// lists into pages of PRODUCTS_PER_PAGE rows (see Pager.h).
+
 void showCatalog(const Inventory& inv) {
-    clearScreen();
-    cout << "--- COMPLETE CATALOG (" << inv.catalog.size() << " products, array capacity "
-         << inv.catalog.cap() << ") ---\n";
-    printHeader();
-    for (int i = 0; i < inv.catalog.size(); i++) printRow(*inv.catalog.at(i));
-    printLine();
-    pauseForEnter();
+    Product** items = copyPointers(inv.catalog);
+    ostringstream heading;
+    heading << "--- COMPLETE CATALOG (" << inv.catalog.size() << " products, array capacity "
+            << inv.catalog.cap() << ") ---";
+    showProductPages(items, inv.catalog.size(), heading.str(), "", "  The catalog is empty.");
+    delete[] items;
 }
 
 void filterByBrand(const Inventory& inv) {
@@ -34,18 +38,16 @@ void filterByBrand(const Inventory& inv) {
     cout << "--- OFFICIAL PARTNER BRANDS ---\n";
     for (size_t i = 0; i < brands.size(); i++) cout << "  " << i + 1 << ". " << brands[i] << "\n";
     int choice = readInt("Select brand number: ", 1, (int)brands.size());
-    const string& chosen = brands[choice - 1];
+    const string chosen = brands[choice - 1];
 
-    clearScreen();
-    cout << "--- " << chosen << " PRODUCTS ---\n";
-    printHeader();
+    Product** items = new Product*[inv.catalog.size()];
     int n = 0;
-    for (int i = 0; i < inv.catalog.size(); i++) {
-        if (toLower(inv.catalog.at(i)->brand) == toLower(chosen)) { printRow(*inv.catalog.at(i)); n++; }
-    }
-    printLine();
-    cout << n << " product(s) from " << chosen << ".\n";
-    pauseForEnter();
+    for (int i = 0; i < inv.catalog.size(); i++)
+        if (toLower(inv.catalog.at(i)->brand) == toLower(chosen)) items[n++] = inv.catalog.at(i);
+
+    showProductPages(items, n, "--- " + chosen + " PRODUCTS ---",
+                     to_string(n) + " product(s) from " + chosen + ".");
+    delete[] items;
 }
 
 void searchMenu(const Inventory& inv) {
@@ -54,31 +56,26 @@ void searchMenu(const Inventory& inv) {
     int c = readInt("Choice: ", 0, 2);
     if (c == 1) {
         string key = readNonEmpty("Keyword (name / brand / category): ");
-        clearScreen();
-        cout << "--- KEYWORD SEARCH: '" << key << "' ---\n";
         Product** res = new Product*[inv.catalog.size() > 0 ? inv.catalog.size() : 1];
         int found = linearKeywordSearch(inv.catalog, key, res);
-        if (found == 0) cout << "  No products match '" << key << "'.\n";
-        else {
-            printHeader();
-            for (int i = 0; i < found; i++) printRow(*res[i]);
-            printLine();
-        }
-        cout << "Linear search scanned " << inv.catalog.size() << " records (O(n)), "
-             << found << " match(es).\n";
+        ostringstream footer;
+        footer << "Linear search scanned " << inv.catalog.size() << " records (O(n)), "
+               << found << " match(es).";
+        showProductPages(res, found, "--- KEYWORD SEARCH: '" + key + "' ---", footer.str(),
+                         "  No products match '" + key + "'.");
         delete[] res;
-        pauseForEnter();
     } else if (c == 2) {
         int id = readInt("Product ID: ", 1, 2000000000);
-        clearScreen();
-        cout << "--- PRODUCT ID SEARCH: " << id << " ---\n";
         int steps = 0;
         Product* p = inv.find(id, &steps);
-        if (!p) cout << "  No product with ID " << id << ".\n";
-        else { printHeader(); printRow(*p); printLine(); }
-        cout << "BST visited " << steps << " node(s); tree height " << inv.bst.height()
-             << " for " << inv.catalog.size() << " products (O(log n)).\n";
-        pauseForEnter();
+        Product* one[1];
+        int found = 0;
+        if (p) one[found++] = p;
+        ostringstream footer;
+        footer << "BST visited " << steps << " node(s); tree height " << inv.bst.height()
+               << " for " << inv.catalog.size() << " products (O(log n)).";
+        showProductPages(one, found, "--- PRODUCT ID SEARCH: " + to_string(id) + " ---", footer.str(),
+                         "  No product with ID " + to_string(id) + ".");
     }
 }
 
@@ -97,20 +94,16 @@ void priceRangeFilter(const Inventory& inv) {
     quickSort(sorted, 0, n - 1, priceAsc);
     int first = lowerBound(sorted, n, lo);
     int last = upperBound(sorted, n, hi);     // exclusive
+    int found = last > first ? last - first : 0;
 
-    clearScreen();
-    cout << "--- PRODUCTS FROM PHP " << fixed << setprecision(2) << lo << " TO PHP " << hi << " ---\n";
-    if (swapped) cout << "  (minimum and maximum were swapped)\n";
-    if (first >= last) cout << "  No products between PHP " << fixed << setprecision(2) << lo
-                            << " and PHP " << hi << ".\n";
-    else {
-        printHeader();
-        for (int i = first; i < last; i++) printRow(*sorted[i]);
-        printLine();
-        cout << (last - first) << " product(s) in range (found with two binary searches, O(log n)).\n";
-    }
+    ostringstream range;
+    range << fixed << setprecision(2) << "PHP " << lo << " and PHP " << hi;
+    string heading = "--- PRODUCTS BETWEEN " + range.str() + " ---";
+    if (swapped) heading += "\n  (minimum and maximum were swapped)";
+    showProductPages(sorted + first, found, heading,
+                     to_string(found) + " product(s) in range (found with two binary searches, O(log n)).",
+                     "  No products between " + range.str() + ".");
     delete[] sorted;
-    pauseForEnter();
 }
 
 void brandShowcase(const Inventory& inv) {
@@ -147,20 +140,17 @@ void sortMenu(const Inventory& inv) {
     int dir = readInt("  1 = ascending, 2 = descending: ", 1, 2);
 
     Product** arr = copyPointers(inv.catalog);   // sort a copy; catalog order is untouched
-    clearScreen();
+    string heading;
     if (c == 1) {
         quickSort(arr, 0, n - 1, dir == 1 ? priceAsc : priceDesc);
-        cout << "Sorted by price (" << (dir == 1 ? "low to high" : "high to low") << ") using Quick Sort:\n";
+        heading = string("Sorted by price (") + (dir == 1 ? "low to high" : "high to low") + ") using Quick Sort:";
     } else if (c == 2) {
         insertionSort(arr, n, dir == 1 ? stockAsc : stockDesc);
-        cout << "Sorted by stock (" << (dir == 1 ? "low to high" : "high to low") << ") using Insertion Sort:\n";
+        heading = string("Sorted by stock (") + (dir == 1 ? "low to high" : "high to low") + ") using Insertion Sort:";
     } else {
         insertionSort(arr, n, dir == 1 ? brandAsc : brandDesc);
-        cout << "Sorted by brand (" << (dir == 1 ? "A to Z" : "Z to A") << ") using Insertion Sort:\n";
+        heading = string("Sorted by brand (") + (dir == 1 ? "A to Z" : "Z to A") + ") using Insertion Sort:";
     }
-    printHeader();
-    for (int i = 0; i < n; i++) printRow(*arr[i]);
-    printLine();
+    showProductPages(arr, n, heading);
     delete[] arr;
-    pauseForEnter();
 }
