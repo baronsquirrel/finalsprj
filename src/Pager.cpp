@@ -14,6 +14,7 @@ void showProductPages(Product** items, int count, const string& heading,
                       const string& footer, const string& emptyMessage) {
     int pages = (count + PRODUCTS_PER_PAGE - 1) / PRODUCTS_PER_PAGE;
     if (pages < 1) pages = 1;
+    ProductTableLayout layout = makeLayout(items, count);   // measured over ALL pages, so columns stay put
     int page = 1;
     string note;            // a hint to show on the next redraw (e.g. "already on the last page")
 
@@ -27,9 +28,9 @@ void showProductPages(Product** items, int count, const string& heading,
             int first = (page - 1) * PRODUCTS_PER_PAGE;                 // index of the first row
             int last = first + PRODUCTS_PER_PAGE;                       // one past the last row
             if (last > count) last = count;
-            printHeader();
-            for (int i = first; i < last; i++) printRow(*items[i]);
-            printLine();
+            printHeader(layout);
+            for (int i = first; i < last; i++) printRow(*items[i], layout);
+            printRule(layout);
             if (pages > 1)
                 cout << "Page " << page << " of " << pages << "  (products " << first + 1
                      << "-" << last << " of " << count << ")\n";

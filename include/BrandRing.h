@@ -45,12 +45,3 @@ public:
     bool atStart() const { return cur == tail->next; }
     void advance() { cur = cur->next; }          // wraps automatically at the end
 };
-
-inline string taglineFor(const string& brand) {
-    string b = toLower(brand);
-    if (b == "apple") return "Think different. Premium design, seamless ecosystem.";
-    if (b == "samsung") return "Do what you can't. Bold screens, everyday innovation.";
-    if (b == "sony") return "Be moved. Studio-grade sound and gaming.";
-    if (b == "lenovo") return "Smarter technology for all. Laptops built to perform.";
-    return "Official partner brand.";
-}

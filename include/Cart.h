@@ -91,10 +91,9 @@ public:
              << setw(12) << "Price" << setw(6) << "Qty" << setw(14) << "Subtotal" << "\n";
         printLine();
         for (Node* n = head; n; n = n->next) {
-            string nm = n->item.name;
-            if (nm.size() > 30) nm = nm.substr(0, 27) + "...";
+            string nm = fitText(n->item.name, 30);      // UTF-8 safe: padded or cut with "..."
             cout << left << setw(4) << (n == cur ? " >>" : "") << setw(7) << n->item.productId
-                 << setw(32) << nm << right << fixed << setprecision(2) << setw(12) << n->item.price
+                 << nm << "  " << right << fixed << setprecision(2) << setw(12) << n->item.price
                  << setw(6) << n->item.qty << setw(14) << n->item.price * n->item.qty << "\n";
         }
         printLine();

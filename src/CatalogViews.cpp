@@ -106,10 +106,10 @@ void priceRangeFilter(const Inventory& inv) {
     delete[] sorted;
 }
 
-void brandShowcase(const Inventory& inv) {
+void brandShowcase(const Inventory& inv, const BrandTaglines& taglines) {
     BrandRing ring;
     for (int i = 0; i < inv.catalog.size(); i++)
-        ring.add(inv.catalog.at(i)->brand, taglineFor(inv.catalog.at(i)->brand));
+        ring.add(inv.catalog.at(i)->brand, taglines.lookup(inv.catalog.at(i)->brand));
     if (ring.size() == 0) { cout << "  No brands to showcase.\n"; pauseForEnter(); return; }
 
     while (true) {

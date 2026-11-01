@@ -1,7 +1,7 @@
 // ============================================================================
 //  BRAND-AFFILIATED E-COMMERCE INVENTORY & SEARCH SYSTEM (CS201)
 //  Data Structure and Algorithm Analysis - Final Output
-//  Domain: Tech & Electronics | Partner brands: Apple, Samsung, Sony, Lenovo
+//  Products, brands and taglines are NOT in the code: they are loaded from PostgreSQL (see sql/).
 //
 //  This file only holds the main menu loop. Each lab lives in its own file (headers in include/, sources in src/):
 //    Lab 1  Dynamic Allocation   -> Catalog.h      (resizable array)
@@ -20,6 +20,7 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <memory>
 #include <string>
 #include "AppContext.h"
 #include "Utils.h"
@@ -33,7 +34,7 @@ void printMenu() {
     cout << " BRAND-AFFILIATED E-COMMERCE INVENTORY & SEARCH SYSTEM (CS201)\n";
     printLine('=');
     cout << "1. View Complete Catalog (Tabular View with Brand Affiliations)\n"
-         << "2. Filter Products by Official Brand (e.g., Apple, Samsung, Sony)\n"
+         << "2. Filter Products by Official Brand (Partner Brands in the Catalog)\n"
          << "3. Search Products by Keyword (Linear Search) / ID (BST)\n"
          << "4. Filter Products by Price Range (Binary Search)\n"
          << "5. Add Item to Shopping Cart (Doubly Linked List Navigation)\n"
@@ -56,23 +57,30 @@ string connectionString() {
 
 void run() {
     cout << "Connecting to PostgreSQL...\n";
-    AppContext ctx(connectionString());      // throws DbConnectError if the database is down
-    ctx.loadFromDatabase();
+    unique_ptr<AppContext> ctx(new AppContext(connectionString()));   // throws DbConnectError if the database is down
+    ctx->loadFromDatabase();
     pauseForEnter("Press Enter to open the main menu...");
 
     while (true) {
         printMenu();
         int choice = readInt("Enter choice (1-10): ", 1, 10);
         switch (choice) {
-            case 1:  showCatalog(ctx.inventory); break;
-            case 2:  filterByBrand(ctx.inventory); break;
-            case 3:  searchMenu(ctx.inventory); break;
-            case 4:  priceRangeFilter(ctx.inventory); break;
-            case 5:  cartMenu(ctx); break;
-            case 6:  checkoutMenu(ctx); break;
-            case 7:  adminMenu(ctx); break;
-            case 8:  brandShowcase(ctx.inventory); break;
-            case 9:  sortMenu(ctx.inventory); break;
+            case 1:  showCatalog(ctx->inventory); break;
+            case 2:  filterByBrand(ctx->inventory); break;
+            case 3:  searchMenu(ctx->inventory); break;
+            case 4:  priceRangeFilter(ctx->inventory); break;
+            case 5:  cartMenu(*ctx); break;
+            case 6:  checkoutMenu(*ctx); break;
+            case 7:
+                if (adminMenu(*ctx)) {                 // the admin chose "Reload all data"
+                    ctx.reset();                       // closes the old connection and frees every structure
+                    ctx.reset(new AppContext(connectionString()));
+                    ctx->loadFromDatabase();           // picks up anything changed in the database
+                    pauseForEnter("Reload complete. Press Enter to open the main menu...");
+                }
+                break;
+            case 8:  brandShowcase(ctx->inventory, ctx->taglines); break;
+            case 9:  sortMenu(ctx->inventory); break;
             case 10:
                 clearScreen();
                 cout << "Thank you for using the system. Freeing all memory... Goodbye!\n";
@@ -82,6 +90,7 @@ void run() {
 }
 
 int main() {
+    setupConsole();
     try {
         run();
     } catch (const InputEnded&) {

@@ -4,14 +4,14 @@
 #include "AdminActions.h"
 #include "Utils.h"
 
-void adminMenu(AppContext& ctx) {
+bool adminMenu(AppContext& ctx) {
     while (true) {
         clearScreen();
         cout << "--- ADMIN PANEL (undo: " << ctx.undoStack.size() << ", redo: " << ctx.redoStack.size() << ") ---\n"
              << "  1. Add new product\n  2. Update stock quantity\n  3. Remove product\n"
-             << "  4. Undo last action (stack pop)\n  5. Redo last undone action\n  0. Back\n";
-        int c = readInt("Choice: ", 0, 5);
-        if (c == 0) return;
+             << "  4. Undo last action (stack pop)\n  5. Redo last undone action\n  6. Reload all data from the database\n  0. Back\n";
+        int c = readInt("Choice: ", 0, 6);
+        if (c == 0) return false;
 
         if (c == 1) {
             Product prod{ctx.inventory.nextId, "", "", "", 0, 0};
@@ -64,6 +64,9 @@ void adminMenu(AppContext& ctx) {
             if (!ctx.redoStack.pop(a)) { cout << "  Nothing to redo.\n"; pauseForEnter(); continue; }
             if (applyRedo(ctx, a)) ctx.undoStack.push(a);
             else cout << "  Could not redo (the product state has changed).\n";
+        } else if (c == 6) {
+            cout << "  Reloading from the database (undo/redo history will be cleared)...\n";
+            return true;
         }
         pauseForEnter();     // every action ends with a pause so its message can be read
     }

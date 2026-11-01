@@ -18,10 +18,11 @@ Database::Database(const string& connInfo) {
 
     // Fail early with a clear message if sql/schema.sql has not been run yet.
     pqxx::work tx(impl_->conn);
+    tx.exec("SET client_encoding TO 'UTF8'");       // always talk UTF-8, whatever the database encoding
     pqxx::row r = tx.exec(
         "SELECT count(*) FROM information_schema.tables WHERE table_schema = 'public' "
-        "AND table_name IN ('products','orders','order_items','cart_items','wishlist_items')").one_row();
-    if (r[0].as<int>() != 5)
+        "AND table_name IN ('products','orders','order_items','cart_items','wishlist_items','brands')").one_row();
+    if (r[0].as<int>() != 6)
         throw runtime_error("The database tables were not found. Create them with:\n"
                             "  psql -U ecommerce_app -d ecommerce_db -f sql/schema.sql");
     tx.commit();
@@ -50,12 +51,6 @@ vector<Product> Database::loadProducts() {
     return out;
 }
 
-void Database::insertProducts(const vector<Product>& items) {
-    pqxx::work tx(impl_->conn);
-    for (size_t i = 0; i < items.size(); i++) insertProductRow(tx, items[i]);
-    tx.commit();
-}
-
 void Database::insertProduct(const Product& p) {
     pqxx::work tx(impl_->conn);
     insertProductRow(tx, p);
@@ -72,6 +67,15 @@ void Database::deleteProduct(int productId) {
     pqxx::work tx(impl_->conn);
     tx.exec("DELETE FROM products WHERE id = $1", pqxx::params{productId});
     tx.commit();
+}
+
+vector<pair<string, string> > Database::loadBrandTaglines() {
+    pqxx::work tx(impl_->conn);
+    pqxx::result res = tx.exec("SELECT name, tagline FROM brands ORDER BY name");
+    vector<pair<string, string> > out;
+    for (const pqxx::row& row : res) out.push_back(make_pair(row[0].as<string>(), row[1].as<string>()));
+    tx.commit();
+    return out;
 }
 
 // ---------------------------------------------------------------------------

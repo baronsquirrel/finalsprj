@@ -28,10 +28,11 @@ public:
 
     // ---- products ----------------------------------------------------------
     std::vector<Product> loadProducts();                     // ordered by id
-    void insertProducts(const std::vector<Product>& items);  // one transaction
     void insertProduct(const Product& p);
     void updateStock(int productId, int newStock);
     void deleteProduct(int productId);   // cart / wishlist rows cascade away
+
+    std::vector<std::pair<std::string, std::string> > loadBrandTaglines();   // (brand, tagline)
 
     // ---- cart and wishlist (list order = the database 'position' column) ----
     std::vector<std::pair<int, int>> loadCart();             // (productId, qty)

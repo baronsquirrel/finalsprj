@@ -1,23 +1,16 @@
 #include <iostream>
 #include <vector>
 #include "AppContext.h"
-#include "SeedData.h"
 
 void AppContext::loadFromDatabase() {
     vector<Product> products = db.loadProducts();
-    if (products.empty()) {
-        loadSeedData(inventory);
-        vector<Product> seeded;
-        for (int i = 0; i < inventory.catalog.size(); i++) seeded.push_back(*inventory.catalog.at(i));
-        db.insertProducts(seeded);
-        cout << "First run: stored " << seeded.size() << " starting products in the database.\n";
-    } else {
-        for (size_t i = 0; i < products.size(); i++) {
-            Product* p = new Product(products[i]);
-            if (!inventory.addProduct(p)) delete p;
-        }
-        cout << "Loaded " << products.size() << " products from the database.\n";
+    for (size_t i = 0; i < products.size(); i++) {
+        Product* p = new Product(products[i]);
+        if (!inventory.addProduct(p)) delete p;
     }
+
+    vector<pair<string, string> > brandRows = db.loadBrandTaglines();
+    for (size_t i = 0; i < brandRows.size(); i++) taglines.add(brandRows[i].first, brandRows[i].second);
 
     // The cart and wishlist store only product ids; names and prices come from the
     // catalog we just loaded, so they are always current.
@@ -37,6 +30,10 @@ void AppContext::loadFromDatabase() {
 
     nextOrderId = db.nextOrderId();
 
-    cout << "Restored " << cart.size() << " cart line(s), " << pending.size()
-         << " pending order(s).\n";
+    cout << "Loaded " << products.size() << " product(s), " << brandRows.size() << " brand tagline(s), "
+         << cart.size() << " cart line(s), " << pending.size() << " pending order(s).\n";
+    if (products.empty())
+        cout << "\nThe catalog is empty. Load a dataset with:\n"
+             << "  psql -U ecommerce_app -d ecommerce_db -f sql/seed.sql\n"
+             << "or add products from the Admin panel (menu 7).\n";
 }
