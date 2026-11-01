@@ -9,6 +9,7 @@
 #include "Wishlist.h"
 #include "OrderQueue.h"
 #include "ActionStack.h"
+#include "BrandTaglines.h"
 
 struct AppContext {
     Database db;
@@ -18,11 +19,12 @@ struct AppContext {
     OrderQueue orders;         // Lab 5 FIFO queue
     ActionStack undoStack;     // Lab 4 stacks
     ActionStack redoStack;
+    BrandTaglines taglines;    // banner text for menu 8, from the 'brands' table
     int nextOrderId;
 
     explicit AppContext(const std::string& connInfo) : db(connInfo), nextOrderId(5001) {}
 
-    // Fills the structures above from PostgreSQL. On the very first run the products
-    // table is empty, so the 16 seed products are stored in the database instead.
+    // Fills the structures above from PostgreSQL. The program contains no product or brand
+    // data of its own: whatever is in the database is what gets shown.
     void loadFromDatabase();
 };

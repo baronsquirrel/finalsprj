@@ -2,6 +2,16 @@
 -- Safe to run more than once (IF NOT EXISTS).
 -- Run:  psql -U ecommerce_app -d ecommerce_db -f sql/schema.sql
 
+-- Partner brands and their banner taglines (menu 8). This table is OPTIONAL data:
+-- the brand list itself always comes from products.brand, and a brand that has no
+-- row here simply gets a generic tagline. products.brand is deliberately not a
+-- foreign key, so an admin can add a product with a brand that is not listed yet.
+CREATE TABLE IF NOT EXISTS brands (
+    name     TEXT  PRIMARY KEY,
+    tagline  TEXT  NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS brands_name_lower_idx ON brands (lower(name));
+
 -- The catalog. IDs are assigned by the application (not by the database) so the
 -- BST index and the undo/redo history keep working exactly as before.
 CREATE TABLE IF NOT EXISTS products (

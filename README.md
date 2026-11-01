@@ -2,8 +2,8 @@
 
 **Course:** Data Structure and Algorithm Analysis (BS Computer Engineering) - Final Output
 **Language:** C++17, console application
-**Domain / niche:** Tech & Electronics
-**Official partner brands:** Apple, Samsung, Sony, Lenovo (4 products each, 16 seeded)
+**Domain / niche:** whatever dataset is loaded (the included sample is Tech & Electronics: Apple, Samsung, Sony, Lenovo)
+**Data:** products, brands and taglines live only in PostgreSQL, never in the C++ code
 
 **Author:** _(your name / team members here)_
 
@@ -27,8 +27,16 @@ Then create the tables from the project folder:
 psql -U ecommerce_app -d ecommerce_db -f sql/schema.sql
 ```
 
-The first time the program runs it stores the 16 starting products in the database. After
-that, everything is loaded from PostgreSQL at startup.
+Then load a dataset. The included sample (4 brands, 16 products) is `sql/seed.sql`:
+
+```bash
+psql -U ecommerce_app -d ecommerce_db -f sql/seed.sql
+```
+
+The program contains no product or brand data of its own; everything is read from PostgreSQL at
+startup. To use a different dataset, wipe the old one with `sql/reset_data.sql`, load your own `.sql`
+file (format rules in `sql/README.md`), then restart the program or choose **Admin panel > 6. Reload all
+data from the database**. No code changes or rebuild are needed.
 
 ## Running (password and connection)
 
@@ -61,8 +69,8 @@ No `make`? Compile everything with one command (the `-Iinclude` flag tells g++ w
 
 ```bash
 g++ -std=c++17 -Wall -Wextra -Iinclude -o ecommerce main.cpp src/Utils.cpp src/Sorting.cpp \
-    src/Searching.cpp src/AdminActions.cpp src/SeedData.cpp src/CatalogViews.cpp \
-    src/ShoppingMenus.cpp src/AdminMenu.cpp src/Database.cpp src/AppContext.cpp -lpqxx -lpq
+    src/Searching.cpp src/AdminActions.cpp src/CatalogViews.cpp \
+    src/ShoppingMenus.cpp src/AdminMenu.cpp src/Database.cpp src/AppContext.cpp src/Pager.cpp -lpqxx -lpq
 ```
 
 ## Project structure
@@ -90,7 +98,7 @@ ecommerce-system/
 │   ├── Searching.h         Lab 7 - declarations
 │   ├── Sorting.h           Lab 8 - declarations
 │   ├── AdminActions.h      undo / redo declarations
-│   ├── SeedData.h          starting catalog declaration
+│   ├── BrandTaglines.h     banner text per brand (loaded from the brands table)
 │   ├── CatalogViews.h      menus 1, 2, 3, 4, 8, 9
 │   ├── ShoppingMenus.h     menus 5, 6
 │   └── AdminMenu.h         menu 7
@@ -102,12 +110,14 @@ ecommerce-system/
 │   ├── AdminActions.cpp    add / stock / remove helpers (database + memory) and undo / redo
 │   ├── Database.cpp        all SQL lives here
 │   ├── AppContext.cpp      loads everything from PostgreSQL at startup
-│   ├── SeedData.cpp        the 16 starting products
 │   ├── CatalogViews.cpp
 │   ├── ShoppingMenus.cpp
 │   └── AdminMenu.cpp
 ├── sql/
-│   └── schema.sql          the 5 tables (run once with psql)
+│   ├── schema.sql          the 6 tables (run once with psql)
+│   ├── seed.sql            sample dataset: 4 brands, 16 products
+│   ├── reset_data.sql      wipes all data (keeps the tables) before loading a new dataset
+│   └── README.md           format rules for generating a new dataset
 ├── build/                  intermediate .o files (created by make)
 └── .vscode/                editor include-path settings
 ```
@@ -172,6 +182,7 @@ the structures at startup, and every change is written to the database as it hap
 | Data | Stored in | Notes |
 |---|---|---|
 | Products | `products` | catalog array + BST are rebuilt from it at startup |
+| Brand taglines | `brands` | optional; a brand without a row gets a generic banner line |
 | Cart | `cart_items` | only product id and qty; name and price come from the catalog |
 | Wishlist | `wishlist_items` | list order kept by a `position` column |
 | Orders | `orders`, `order_items` | `pending` orders are reloaded into the FIFO queue in order |
@@ -216,4 +227,4 @@ make asan
 
 ## Sample data
 
-Product names and prices are illustrative placeholders (PHP) for the demo, not live store prices.
+The sample names and prices in `sql/seed.sql` are illustrative placeholders (PHP), not live store prices.

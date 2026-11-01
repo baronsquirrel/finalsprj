@@ -9,7 +9,7 @@ struct Product {
     int id;               // Unique Identifier
     string name;          // Product Title
     string category;      // Category (e.g., Electronics, Footwear)
-    string brand;         // Official Partner Brand (e.g., Nike, Samsung, Apple)
+    string brand;         // Official Partner Brand
     double price;         // Unit Price (PHP)
     int stockQuantity;    // Available Inventory Level
 };

@@ -22,5 +22,17 @@ string toLower(string s);
 bool   containsCI(const string& text, const string& key);   // case-insensitive substring
 
 void printLine(char c = '-');
-void printHeader();                   // column titles for product tables
-void printRow(const Product& p);      // one formatted product row
+// ---- text helpers that understand UTF-8, so accented names still line up -------------
+int textWidth(const string& s);               // characters, not bytes
+string fitText(const string& s, int width);   // exactly `width` characters: padded, or cut with "..."
+void setupConsole();                          // Windows: make the console show UTF-8 correctly
+
+// ---- product tables: column widths adapt to the data being shown ---------------------
+struct ProductTableLayout {
+    int name = 24, category = 12, brand = 10;     // widths of the three text columns
+    int width() const;                            // total table width
+};
+ProductTableLayout makeLayout(Product** items, int count);   // measures every item once
+void printHeader(const ProductTableLayout& t);
+void printRow(const Product& p, const ProductTableLayout& t);
+void printRule(const ProductTableLayout& t, char c = '-');
