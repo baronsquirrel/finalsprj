@@ -75,6 +75,7 @@ ecommerce-system/
 ├── ecommerce(.exe)         the built program (created by make)
 ├── include/                all headers
 │   ├── Product.h           struct Product (the required data model)
+│   ├── Pager.h             paged product tables (PRODUCTS_PER_PAGE = 16)
 │   ├── Database.h          PostgreSQL layer (libpqxx), the only code that talks to the database
 │   ├── AppContext.h        bundles the database + all data structures; passed to the menus
 │   ├── Utils.h             input checking, toLower, table printing
@@ -95,6 +96,7 @@ ecommerce-system/
 │   └── AdminMenu.h         menu 7
 ├── src/                    implementations (everything except main.cpp)
 │   ├── Utils.cpp
+│   ├── Pager.cpp           shows long product lists one page at a time
 │   ├── Searching.cpp       Lab 7 - linear keyword search, binary search bounds
 │   ├── Sorting.cpp         Lab 8 - insertion sort, quick sort
 │   ├── AdminActions.cpp    add / stock / remove helpers (database + memory) and undo / redo
@@ -180,6 +182,13 @@ the structures at startup, and every change is written to the database as it hap
 - **Database first:** every change is written to PostgreSQL before memory is updated, so a database failure never leaves memory ahead of the database.
 - **Deleting a product** also removes it from the cart and wishlist (a database `ON DELETE CASCADE`, mirrored in memory).
 - **Order history keeps a snapshot** of each line's name and price, so it stays correct if the product later changes.
+
+## Paged lists
+
+Every product table (catalog, brand filter, search, price range, sorted view) shows at most 16 rows
+per screen, set by `PRODUCTS_PER_PAGE` in `include/Pager.h`. When a list is longer, the prompt accepts
+`n` (next page), `p` (previous page), a page number, or Enter to go back to the menu. A list that fits on
+one page just waits for Enter, as before.
 
 ## Memory management and safety
 

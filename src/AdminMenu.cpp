@@ -6,7 +6,8 @@
 
 void adminMenu(AppContext& ctx) {
     while (true) {
-        cout << "\n--- ADMIN PANEL (undo: " << ctx.undoStack.size() << ", redo: " << ctx.redoStack.size() << ") ---\n"
+        clearScreen();
+        cout << "--- ADMIN PANEL (undo: " << ctx.undoStack.size() << ", redo: " << ctx.redoStack.size() << ") ---\n"
              << "  1. Add new product\n  2. Update stock quantity\n  3. Remove product\n"
              << "  4. Undo last action (stack pop)\n  5. Redo last undone action\n  0. Back\n";
         int c = readInt("Choice: ", 0, 5);
@@ -19,7 +20,7 @@ void adminMenu(AppContext& ctx) {
             prod.brand = readNonEmpty("Official partner brand: ");
             prod.price = readDouble("Price (PHP): ", 0.01, 1e9);
             prod.stockQuantity = readInt("Stock quantity: ", 0, 1000000);
-            if (!addProductEverywhere(ctx, prod)) { cout << "  ID collision, product not added.\n"; continue; }
+            if (!addProductEverywhere(ctx, prod)) { cout << "  ID collision, product not added.\n"; pauseForEnter(); continue; }
             AdminAction a;
             a.type = ACT_ADD;
             a.after = prod;
@@ -29,7 +30,7 @@ void adminMenu(AppContext& ctx) {
         } else if (c == 2) {
             int id = readInt("Product ID: ", 1, 2000000000);
             Product* p = ctx.inventory.find(id);
-            if (!p) { cout << "  No product with ID " << id << ".\n"; continue; }
+            if (!p) { cout << "  No product with ID " << id << ".\n"; pauseForEnter(); continue; }
             cout << "  '" << p->name << "' currently has " << p->stockQuantity << " in stock.\n";
             int q = readInt("New stock quantity: ", 0, 1000000);
             AdminAction a;
@@ -43,9 +44,9 @@ void adminMenu(AppContext& ctx) {
         } else if (c == 3) {
             int id = readInt("Product ID: ", 1, 2000000000);
             Product* p = ctx.inventory.find(id);
-            if (!p) { cout << "  No product with ID " << id << ".\n"; continue; }
+            if (!p) { cout << "  No product with ID " << id << ".\n"; pauseForEnter(); continue; }
             string confirm = toLower(readLine("Remove '" + p->name + "'? (y/n): "));
-            if (confirm != "y") { cout << "  Cancelled.\n"; continue; }
+            if (confirm != "y") { cout << "  Cancelled.\n"; pauseForEnter(); continue; }
             AdminAction a;
             a.type = ACT_REMOVE;
             a.before = *p;
@@ -55,14 +56,15 @@ void adminMenu(AppContext& ctx) {
             cout << "  Removed '" << a.before.name << "'.\n";
         } else if (c == 4) {
             AdminAction a;
-            if (!ctx.undoStack.pop(a)) { cout << "  Nothing to undo.\n"; continue; }
+            if (!ctx.undoStack.pop(a)) { cout << "  Nothing to undo.\n"; pauseForEnter(); continue; }
             if (applyUndo(ctx, a)) ctx.redoStack.push(a);
             else cout << "  Could not undo (the product state has changed).\n";
         } else if (c == 5) {
             AdminAction a;
-            if (!ctx.redoStack.pop(a)) { cout << "  Nothing to redo.\n"; continue; }
+            if (!ctx.redoStack.pop(a)) { cout << "  Nothing to redo.\n"; pauseForEnter(); continue; }
             if (applyRedo(ctx, a)) ctx.undoStack.push(a);
             else cout << "  Could not redo (the product state has changed).\n";
         }
+        pauseForEnter();     // every action ends with a pause so its message can be read
     }
 }

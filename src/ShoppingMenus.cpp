@@ -10,7 +10,8 @@ void cartMenu(AppContext& ctx) {
     Cart& cart = ctx.cart;
     Wishlist& wish = ctx.wishlist;
     while (true) {
-        cout << "\n--- SHOPPING CART (" << cart.size() << " line(s)) ---\n"
+        clearScreen();
+        cout << "--- SHOPPING CART (" << cart.size() << " line(s)) ---\n"
              << "  1. Add item to cart\n  2. View cart\n  3. Browse cart (next / previous)\n"
              << "  4. Remove highlighted item\n  5. Add item to wishlist\n  6. View wishlist\n"
              << "  7. Remove item from wishlist\n  0. Back\n";
@@ -20,8 +21,8 @@ void cartMenu(AppContext& ctx) {
         if (c == 1) {
             int id = readInt("Product ID: ", 1, 2000000000);
             Product* p = inv.find(id);
-            if (!p) { cout << "  No product with ID " << id << ".\n"; continue; }
-            if (p->stockQuantity == 0) { cout << "  Sorry, '" << p->name << "' is out of stock.\n"; continue; }
+            if (!p) { cout << "  No product with ID " << id << ".\n"; pauseForEnter(); continue; }
+            if (p->stockQuantity == 0) { cout << "  Sorry, '" << p->name << "' is out of stock.\n"; pauseForEnter(); continue; }
             int qty = readInt("Quantity (1-" + to_string(p->stockQuantity) + "): ", 1, p->stockQuantity);
             cart.addItem(*p, qty);
             ctx.db.setCartItem(p->id, cart.current()->qty);   // qty after merging duplicates
@@ -29,18 +30,23 @@ void cartMenu(AppContext& ctx) {
         } else if (c == 2) {
             cart.display();
         } else if (c == 3) {
-            if (cart.size() == 0) { cout << "  (cart is empty)\n"; continue; }
+            if (cart.size() == 0) { cout << "  (cart is empty)\n"; pauseForEnter(); continue; }
+            string note;
             while (true) {
+                clearScreen();
+                cout << "--- BROWSE CART ---\n";
                 cart.display();
+                if (!note.empty()) { cout << note << "\n"; note.clear(); }
                 string cmd = toLower(readLine("[n]ext / [p]revious / [b]ack: "));
-                if (cmd == "n") { if (!cart.moveNext()) cout << "  Already at the last item.\n"; }
-                else if (cmd == "p") { if (!cart.movePrev()) cout << "  Already at the first item.\n"; }
+                if (cmd == "n") { if (!cart.moveNext()) note = "  Already at the last item."; }
+                else if (cmd == "p") { if (!cart.movePrev()) note = "  Already at the first item."; }
                 else if (cmd == "b") break;
-                else cout << "  Enter n, p or b.\n";
+                else note = "  Enter n, p or b.";
             }
+            continue;      // no pause: the user just left the browser
         } else if (c == 4) {
             const CartItem* it = cart.current();
-            if (!it) { cout << "  (cart is empty)\n"; continue; }
+            if (!it) { cout << "  (cart is empty)\n"; pauseForEnter(); continue; }
             string nm = it->name;
             int pid = it->productId;
             cart.removeCurrent();
@@ -49,7 +55,7 @@ void cartMenu(AppContext& ctx) {
         } else if (c == 5) {
             int id = readInt("Product ID: ", 1, 2000000000);
             Product* p = inv.find(id);
-            if (!p) { cout << "  No product with ID " << id << ".\n"; continue; }
+            if (!p) { cout << "  No product with ID " << id << ".\n"; pauseForEnter(); continue; }
             bool added = wish.add(p->id, p->name);
             if (added) ctx.db.addWishlistItem(p->id);
             cout << (added ? "  Added to wishlist.\n" : "  Already on your wishlist.\n");
@@ -61,6 +67,7 @@ void cartMenu(AppContext& ctx) {
             if (removed) ctx.db.removeWishlistItem(id);
             cout << (removed ? "  Removed from wishlist.\n" : "  Not on your wishlist.\n");
         }
+        pauseForEnter();     // every action ends with a pause so its message can be read
     }
 }
 
@@ -110,13 +117,14 @@ void checkoutMenu(AppContext& ctx) {
     Cart& cart = ctx.cart;
     OrderQueue& queue = ctx.orders;
     while (true) {
-        cout << "\n--- CHECKOUT QUEUE (" << queue.size() << " pending) ---\n"
+        clearScreen();
+        cout << "--- CHECKOUT QUEUE (" << queue.size() << " pending) ---\n"
              << "  1. Place order from cart (enqueue)\n  2. Process next order (dequeue)\n"
              << "  3. View pending orders\n  0. Back\n";
         int c = readInt("Choice: ", 0, 3);
         if (c == 0) return;
         if (c == 1) {
-            if (cart.size() == 0) { cout << "  Your cart is empty. Add items first.\n"; continue; }
+            if (cart.size() == 0) { cout << "  Your cart is empty. Add items first.\n"; pauseForEnter(); continue; }
             Order o;
             o.orderId = ctx.nextOrderId++;
             string name = readLine("Customer name: ");
@@ -132,5 +140,6 @@ void checkoutMenu(AppContext& ctx) {
         } else if (c == 3) {
             queue.display();
         }
+        pauseForEnter();
     }
 }
