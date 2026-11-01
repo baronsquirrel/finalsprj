@@ -34,11 +34,18 @@ void filterByBrand(const Inventory& inv) {
     }
     if (brands.empty()) { cout << "  The catalog is empty.\n"; pauseForEnter(); return; }
 
-    clearScreen();
-    cout << "--- OFFICIAL PARTNER BRANDS ---\n";
-    for (size_t i = 0; i < brands.size(); i++) cout << "  " << i + 1 << ". " << brands[i] << "\n";
-    int choice = readInt("Select brand number: ", 1, (int)brands.size());
-    const string chosen = brands[choice - 1];
+    // Alphabetical (ignoring case) so a long brand list is easy to scan. Insertion sort, as in Lab 8.
+    for (size_t i = 1; i < brands.size(); i++) {
+        string key = brands[i];
+        size_t j = i;
+        while (j > 0 && toLower(key) < toLower(brands[j - 1])) { brands[j] = brands[j - 1]; j--; }
+        brands[j] = key;
+    }
+
+    // Paged pick-list (16 per page) with a way out: 0 goes back to the main menu.
+    int pick = pickFromList(brands, "--- OFFICIAL PARTNER BRANDS ---");
+    if (pick < 0) return;
+    const string chosen = brands[pick];
 
     Product** items = new Product*[inv.catalog.size()];
     int n = 0;
