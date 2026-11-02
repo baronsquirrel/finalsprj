@@ -1,7 +1,7 @@
 #include <iostream>
 #include "AdminActions.h"
 
-// Every helper writes to PostgreSQL FIRST. If the database call throws, nothing in
+// Every helper writes to PostgreSQL first. If the database call throws, nothing in
 // memory has changed yet, so the two never disagree.
 
 bool addProductEverywhere(AppContext& ctx, const Product& prod) {
