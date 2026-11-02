@@ -1,23 +1,3 @@
-// ============================================================================
-//  BRAND-AFFILIATED E-COMMERCE INVENTORY & SEARCH SYSTEM (CS201)
-//  Data Structure and Algorithm Analysis - Final Output
-//  Products, brands and taglines are NOT in the code: they are loaded from PostgreSQL (see sql/).
-//
-//  This file only holds the main menu loop. Each lab lives in its own file (headers in include/, sources in src/):
-//    Lab 1  Dynamic Allocation   -> Catalog.h      (resizable array)
-//    Lab 2  Singly/Doubly Lists  -> Cart.h, Wishlist.h
-//    Lab 3  Circular List        -> BrandRing.h
-//    Lab 4  Stack (LIFO)         -> ActionStack.h, AdminActions.cpp
-//    Lab 5  Queue (FIFO)         -> OrderQueue.h
-//    Lab 6  BST                  -> ProductBST.h
-//    Lab 7  Searching            -> Searching.cpp
-//    Lab 8  Sorting              -> Sorting.cpp
-//    Storage                     -> Database.h/.cpp (PostgreSQL), AppContext.h/.cpp
-//    Paging                      -> Pager.h/.cpp (16 products per screen)
-//
-//  Build:  run `make` in the project folder (see README.md for the g++ command)
-// ============================================================================
-
 #include <cstdlib>
 #include <iostream>
 #include <memory>
@@ -31,7 +11,7 @@
 void printMenu() {
     clearScreen();
     printLine('=');
-    cout << " BRAND-AFFILIATED E-COMMERCE INVENTORY & SEARCH SYSTEM (CS201)\n";
+    cout << " BRAND-AFFILIATED E-COMMERCE INVENTORY & SEARCH SYSTEM\n";
     printLine('=');
     cout << "1. View Complete Catalog (Tabular View with Brand Affiliations)\n"
          << "2. Filter Products by Official Brand (Partner Brands in the Catalog)\n"
@@ -46,8 +26,7 @@ void printMenu() {
     printLine('=');
 }
 
-// Connection settings. The password is never stored in the code or the repository:
-// libpq reads it from the PGPASSWORD environment variable (or pgpass.conf).
+// libpq reads password from the PGPASSWORD environment variable (or pgpass.conf).
 // Set ECOMMERCE_DB_CONN to point the program at a different database.
 string connectionString() {
     const char* env = getenv("ECOMMERCE_DB_CONN");

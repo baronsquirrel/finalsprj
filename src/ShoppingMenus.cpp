@@ -4,6 +4,85 @@
 #include <vector>
 #include "ShoppingMenus.h"
 #include "Utils.h"
+#include "Pager.h"
+#include "Sorting.h"
+
+// Shows the whole catalog (paged) and lets the user pick a product by its ID, so nobody has
+// to remember IDs. Returns nullptr if the user cancels.
+static Product* chooseProduct(const Inventory& inv, const string& heading) {
+    Product** items = copyPointers(inv.catalog);
+    Product* chosen = pickProductFromPages(items, inv.catalog.size(), heading, "  The catalog is empty.");
+    delete[] items;
+    return chosen;
+}
+
+// Browse the cart (doubly linked list: next / previous are both O(1)) and remove the highlighted line.
+static void browseCart(AppContext& ctx) {
+    Cart& cart = ctx.cart;
+    string note;
+    while (true) {
+        clearScreen();
+        cout << "--- BROWSE CART ---\n";
+        if (cart.size() == 0) {
+            cout << "  (cart is empty)\n";
+            if (!note.empty()) cout << note << "\n";
+            pauseForEnter();
+            return;
+        }
+        cart.display();
+        if (!note.empty()) { cout << note << "\n"; note.clear(); }
+
+        string cmd = toLower(trim(readLine("\n[n] next   [p] previous   [r] remove highlighted   [b] back: ")));
+        if (cmd.empty() || cmd == "b" || cmd == "back") return;
+        if (cmd == "n") { if (!cart.moveNext()) note = "  Already at the last item."; }
+        else if (cmd == "p") { if (!cart.movePrev()) note = "  Already at the first item."; }
+        else if (cmd == "r") {
+            const CartItem* it = cart.current();
+            if (it) {
+                string nm = it->name;
+                int pid = it->productId;
+                cart.removeCurrent();
+                ctx.db.removeCartItem(pid);
+                note = "  Removed '" + nm + "' from the cart.";
+            }
+        }
+        else note = "  Enter n, p, r or b (or press Enter to go back).";
+    }
+}
+
+// Browse the wishlist (singly linked list) and remove the highlighted item.
+static void browseWishlist(AppContext& ctx) {
+    Wishlist& wish = ctx.wishlist;
+    wish.moveToFirst();
+    string note;
+    while (true) {
+        clearScreen();
+        cout << "--- BROWSE WISHLIST ---\n";
+        if (wish.size() == 0) {
+            cout << "  (wishlist is empty)\n";
+            if (!note.empty()) cout << note << "\n";
+            pauseForEnter();
+            return;
+        }
+        wish.display(true);
+        if (!note.empty()) { cout << note << "\n"; note.clear(); }
+
+        string cmd = toLower(trim(readLine("\n[n] next   [p] previous   [r] remove highlighted   [b] back: ")));
+        if (cmd.empty() || cmd == "b" || cmd == "back") return;
+        if (cmd == "n") { if (!wish.moveNext()) note = "  Already at the last item."; }
+        else if (cmd == "p") { if (!wish.movePrev()) note = "  Already at the first item."; }
+        else if (cmd == "r") {
+            int pid = 0;
+            string nm;
+            if (wish.current(pid, nm)) {
+                wish.removeCurrent();
+                ctx.db.removeWishlistItem(pid);
+                note = "  Removed '" + nm + "' from the wishlist.";
+            }
+        }
+        else note = "  Enter n, p, r or b (or press Enter to go back).";
+    }
+}
 
 void cartMenu(AppContext& ctx) {
     Inventory& inv = ctx.inventory;
@@ -11,61 +90,42 @@ void cartMenu(AppContext& ctx) {
     Wishlist& wish = ctx.wishlist;
     while (true) {
         clearScreen();
-        cout << "--- SHOPPING CART (" << cart.size() << " line(s)) ---\n"
-             << "  1. Add item to cart\n  2. View cart\n  3. Browse cart (next / previous)\n"
-             << "  4. Remove highlighted item\n  5. Add item to wishlist\n  6. View wishlist\n"
-             << "  7. Remove item from wishlist\n  0. Back\n";
-        int c = readInt("Choice: ", 0, 7);
+        cout << "--- SHOPPING CART (" << cart.size() << " line(s), " << wish.size() << " on wishlist) ---\n"
+             << "  1. Add item to cart (choose from the catalog)\n"
+             << "  2. View cart\n"
+             << "  3. Browse cart (next / previous / remove)\n"
+             << "  4. Add item to wishlist (choose from the catalog)\n"
+             << "  5. View wishlist\n"
+             << "  6. Browse wishlist (next / previous / remove)\n"
+             << "  0. Back\n";
+        int c = readInt("Choice: ", 0, 6);
         if (c == 0) return;
 
         if (c == 1) {
-            int id = readInt("Product ID: ", 1, 2000000000);
-            Product* p = inv.find(id);
-            if (!p) { cout << "  No product with ID " << id << ".\n"; pauseForEnter(); continue; }
+            Product* p = chooseProduct(inv, "--- ADD TO CART: choose a product ---");
+            if (!p) continue;                                   // cancelled
             if (p->stockQuantity == 0) { cout << "  Sorry, '" << p->name << "' is out of stock.\n"; pauseForEnter(); continue; }
-            int qty = readInt("Quantity (1-" + to_string(p->stockQuantity) + "): ", 1, p->stockQuantity);
+            int qty = 0;
+            if (!readIntOrCancel("Quantity (1-" + to_string(p->stockQuantity) + ")", 1, p->stockQuantity, qty)) continue;
             cart.addItem(*p, qty);
             ctx.db.setCartItem(p->id, cart.current()->qty);   // qty after merging duplicates
             cout << "  Added " << qty << " x " << p->name << " to your cart.\n";
         } else if (c == 2) {
             cart.display();
         } else if (c == 3) {
-            if (cart.size() == 0) { cout << "  (cart is empty)\n"; pauseForEnter(); continue; }
-            string note;
-            while (true) {
-                clearScreen();
-                cout << "--- BROWSE CART ---\n";
-                cart.display();
-                if (!note.empty()) { cout << note << "\n"; note.clear(); }
-                string cmd = toLower(readLine("[n]ext / [p]revious / [b]ack: "));
-                if (cmd == "n") { if (!cart.moveNext()) note = "  Already at the last item."; }
-                else if (cmd == "p") { if (!cart.movePrev()) note = "  Already at the first item."; }
-                else if (cmd == "b") break;
-                else note = "  Enter n, p or b.";
-            }
-            continue;      // no pause: the user just left the browser
+            browseCart(ctx);
+            continue;                                           // no extra pause: the user just left the browser
         } else if (c == 4) {
-            const CartItem* it = cart.current();
-            if (!it) { cout << "  (cart is empty)\n"; pauseForEnter(); continue; }
-            string nm = it->name;
-            int pid = it->productId;
-            cart.removeCurrent();
-            ctx.db.removeCartItem(pid);
-            cout << "  Removed '" << nm << "' from the cart.\n";
-        } else if (c == 5) {
-            int id = readInt("Product ID: ", 1, 2000000000);
-            Product* p = inv.find(id);
-            if (!p) { cout << "  No product with ID " << id << ".\n"; pauseForEnter(); continue; }
+            Product* p = chooseProduct(inv, "--- ADD TO WISHLIST: choose a product ---");
+            if (!p) continue;                                   // cancelled
             bool added = wish.add(p->id, p->name);
             if (added) ctx.db.addWishlistItem(p->id);
-            cout << (added ? "  Added to wishlist.\n" : "  Already on your wishlist.\n");
-        } else if (c == 6) {
+            cout << (added ? "  Added '" + p->name + "' to your wishlist.\n" : "  '" + p->name + "' is already on your wishlist.\n");
+        } else if (c == 5) {
             wish.display();
-        } else if (c == 7) {
-            int id = readInt("Product ID to remove: ", 1, 2000000000);
-            bool removed = wish.remove(id);
-            if (removed) ctx.db.removeWishlistItem(id);
-            cout << (removed ? "  Removed from wishlist.\n" : "  Not on your wishlist.\n");
+        } else if (c == 6) {
+            browseWishlist(ctx);
+            continue;
         }
         pauseForEnter();     // every action ends with a pause so its message can be read
     }

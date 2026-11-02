@@ -34,11 +34,18 @@ void filterByBrand(const Inventory& inv) {
     }
     if (brands.empty()) { cout << "  The catalog is empty.\n"; pauseForEnter(); return; }
 
-    clearScreen();
-    cout << "--- OFFICIAL PARTNER BRANDS ---\n";
-    for (size_t i = 0; i < brands.size(); i++) cout << "  " << i + 1 << ". " << brands[i] << "\n";
-    int choice = readInt("Select brand number: ", 1, (int)brands.size());
-    const string chosen = brands[choice - 1];
+    // Alphabetical (ignoring case) so a long brand list is easy to scan. Insertion sort, as in Lab 8.
+    for (size_t i = 1; i < brands.size(); i++) {
+        string key = brands[i];
+        size_t j = i;
+        while (j > 0 && toLower(key) < toLower(brands[j - 1])) { brands[j] = brands[j - 1]; j--; }
+        brands[j] = key;
+    }
+
+    // Paged pick-list (16 per page) with a way out: 0 goes back to the main menu.
+    int pick = pickFromList(brands, "--- OFFICIAL PARTNER BRANDS ---");
+    if (pick < 0) return;
+    const string chosen = brands[pick];
 
     Product** items = new Product*[inv.catalog.size()];
     int n = 0;
@@ -55,7 +62,8 @@ void searchMenu(const Inventory& inv) {
     cout << "--- SEARCH ---\n  1. Keyword (Linear Search)\n  2. Product ID (BST Search)\n  0. Back\n";
     int c = readInt("Choice: ", 0, 2);
     if (c == 1) {
-        string key = readNonEmpty("Keyword (name / brand / category): ");
+        string key;
+        if (!readTextOrCancel("Keyword (name / brand / category)", key)) return;
         Product** res = new Product*[inv.catalog.size() > 0 ? inv.catalog.size() : 1];
         int found = linearKeywordSearch(inv.catalog, key, res);
         ostringstream footer;
@@ -65,7 +73,8 @@ void searchMenu(const Inventory& inv) {
                          "  No products match '" + key + "'.");
         delete[] res;
     } else if (c == 2) {
-        int id = readInt("Product ID: ", 1, 2000000000);
+        int id = 0;
+        if (!readIntOrCancel("Product ID", 1, 2000000000, id)) return;
         int steps = 0;
         Product* p = inv.find(id, &steps);
         Product* one[1];
@@ -84,8 +93,10 @@ void priceRangeFilter(const Inventory& inv) {
     if (n == 0) { cout << "  The catalog is empty.\n"; pauseForEnter(); return; }
     clearScreen();
     cout << "--- PRICE RANGE FILTER ---\n";
-    double lo = readDouble("Minimum price (PHP): ", 0, 1e9);
-    double hi = readDouble("Maximum price (PHP): ", 0, 1e9);
+    double lo = 0, hi = 0;
+    if (!readDoubleOrCancel("Minimum price (PHP)", 0, 1e9, lo) ||
+        !readDoubleOrCancel("Maximum price (PHP)", 0, 1e9, hi))
+        return;                                   // cancelled
     bool swapped = false;
     if (lo > hi) { double t = lo; lo = hi; hi = t; swapped = true; }
 
@@ -137,7 +148,8 @@ void sortMenu(const Inventory& inv) {
          << "  3. By brand (Insertion Sort, ties by name)\n  0. Back\n";
     int c = readInt("Choice: ", 0, 3);
     if (c == 0) return;
-    int dir = readInt("  1 = ascending, 2 = descending: ", 1, 2);
+    int dir = 0;
+    if (!readIntOrCancel("  1 = ascending, 2 = descending", 1, 2, dir)) return;
 
     Product** arr = copyPointers(inv.catalog);   // sort a copy; catalog order is untouched
     string heading;

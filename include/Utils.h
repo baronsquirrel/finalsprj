@@ -12,6 +12,14 @@ int    readInt(const string& prompt, int lo, int hi);
 double readDouble(const string& prompt, double lo, double hi);
 string readNonEmpty(const string& prompt);
 
+// Cancel-aware input for prompts that are not menus. Each prints "<label> (Enter to cancel): ";
+// pressing Enter on an empty line cancels and returns false (the value is left untouched).
+bool readIntOrCancel(const string& label, int lo, int hi, int& out);
+bool readDoubleOrCancel(const string& label, double lo, double hi, double& out);
+bool readTextOrCancel(const string& label, string& out);        // any non-empty text
+
+string trim(const string& s);                                   // strips spaces / tabs at both ends
+
 // Wipes the console so each screen starts fresh (cls on Windows).
 void clearScreen();
 
