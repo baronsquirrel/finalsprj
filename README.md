@@ -113,6 +113,7 @@ ecommerce-system/
 ├── sql/
 │   ├── schema.sql          the 6 tables (run once with psql)
 │   ├── seed.sql            sample dataset: 4 brands, 16 products
+│   ├── pc_component_inventory.sql   larger dataset: 28 brands, 1050 PC components (run reset_data.sql first)
 │   ├── reset_data.sql      wipes all data (keeps the tables) before loading a new dataset
 │   └── README.md           format rules for generating a new dataset
 ├── build/                  intermediate .o files (created by make)
